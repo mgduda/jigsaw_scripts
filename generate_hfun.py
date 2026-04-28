@@ -40,8 +40,8 @@ def get_hfun(lon, lat):
 
     return dx(r, hfun_min)
 
-lats = np.linspace(-np.pi/2.0, np.pi/2.0, num=10, endpoint=True)
-lons = np.linspace(-np.pi, np.pi, num=20, endpoint=True)
+lats = np.linspace(-np.pi/2.0, np.pi/2.0, num=2048, endpoint=True)
+lons = np.linspace(-np.pi, np.pi, num=4096, endpoint=True)
 latgrid, longrid = np.meshgrid(lats, lons)
 
 nlats = lats.size
