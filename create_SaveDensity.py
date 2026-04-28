@@ -32,7 +32,7 @@ def dx(r, hfun_min):
 def get_hfun(x, y, z):
     r = np.arccos(z)
 
-    r = r * 6371.220
+    r = r * 6371.229
 
     return dx(r, hfun_min)
 
@@ -42,7 +42,7 @@ def get_density(x, y, z):
     return (1.0 / (dx / 3.0))**4
 
 coords = np.loadtxt('SaveVertices')
-coords = coords / 6371.22
+coords = coords / 6371.229
 
 get_density_vectorized = np.vectorize(get_density)
 density = get_density_vectorized(coords[:,0], coords[:,1], coords[:,2])
