@@ -4,7 +4,7 @@ comment = r'^\s*#'
 point = r'^POINT'
 tri = r'^TRIA'
 
-with open('3km_again-MESH.msh') as msh:
+with open('MESH.msh') as msh:
     listing = False
     i = 0
     n = 1
