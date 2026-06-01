@@ -9,10 +9,7 @@ nlats = lats.size
 nlons = lons.size
 npts = nlats * nlons
 
-eval_lats = [lat for lat in latgrid.flatten()]
-eval_lons = [lon for lon in longrid.flatten()]
-
-distance = hfun.get_hfun(eval_lons, eval_lats)
+distance = hfun.get_hfun(longrid, latgrid)
 
 with open('HFUN.msh', 'w') as f:
     f.write('MSHID=3;ellipsoid-grid\n')
@@ -25,5 +22,5 @@ with open('HFUN.msh', 'w') as f:
         f.write(f'{lat}\n')
 
     f.write(f'VALUE={npts}; 1\n')
-    for d in distance:
+    for d in distance.flatten():
         f.write(f'{d}\n')
