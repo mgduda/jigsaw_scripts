@@ -8,7 +8,7 @@ def get_hfun(longitude, latitude):
 
     r = r * 6371.229
 
-    return dx(r, hfun_min)
+    return dx(r)
 
 def get_density(longitude, latitude):
     dx = get_hfun(longitude, latitude)
@@ -39,7 +39,7 @@ def hfun_normalized(x):
    x = x * pi - 0.5 * pi
    return (hfun(x) - hfun_min) / 2.0 / abs(hfun_min)
 
-def dx(r, hfun_min):
+def dx(r):
    from numpy import logical_and
    trans_center = 500.0 # 1000.0 # 500.0
    width = 500.0 # 3700.0 # 400.0
