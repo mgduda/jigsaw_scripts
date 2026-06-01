@@ -12,7 +12,9 @@ coords = coords / 6371.229
 
 longitude, latitude = cart_to_geo(coords[:,0], coords[:,1], coords[:,2])
 
-density = hfun.get_density(longitude, latitude)
+dx = hfun.get_hfun(longitude, latitude)
+
+density = (1.0 / (dx / hfun.hfun_min))**4
 
 with open('SaveDensity', 'w') as f:
     for d in density:

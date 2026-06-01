@@ -1,5 +1,7 @@
 from math import pi
 
+hfun_min = 3.0
+
 def get_hfun(longitude, latitude):
     from numpy import arccos
     x, y, z = geo_to_cart(longitude, latitude)
@@ -9,11 +11,6 @@ def get_hfun(longitude, latitude):
     r = r * 6371.229
 
     return dx(r)
-
-def get_density(longitude, latitude):
-    dx = get_hfun(longitude, latitude)
-
-    return (1.0 / (dx / 3.0))**4
 
 def geo_to_cart(lam, phi):
     from numpy import cos, sin
