@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 
 import re
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('mesh_file', help='the name of the JIGSAW mesh file')
+args = parser.parse_args()
 
 comment = r'^\s*#'
 point = r'^POINT'
 tri = r'^TRIA'
 
-with open('MESH.msh') as msh:
+with open(args.mesh_file) as msh:
     listing = False
     i = 0
     n = 1
