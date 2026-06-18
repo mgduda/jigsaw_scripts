@@ -1,55 +1,55 @@
-from math import pi
+import numpy as np
 
-hfun_min = 3.0
+hfun_min = 12.0    # Grid distance (km) in refinement region
+
 
 def get_hfun(longitude, latitude):
-    from numpy import arccos
-    x, y, z = geo_to_cart(longitude, latitude)
+    # Refinement center location (degrees)
+    center_lat, center_lon = 38.0, -95.0
 
-    r = arccos(z)
+    # Earth radius in MPAS-A (km)
+    r_earth = 6371.229
 
-    r = r * 6371.229
+    # Convert center location to Cartesian coordinates (unit sphere)
+    x_c, y_c, z_c = geo_to_cartesian(np.radians(center_lon), np.radians(center_lat))
+    p_center = np.array([x_c, y_c, z_c])
 
-    return dx(r)
+    # Convert input longitues and latitudes (radians) to Cartesian coordinates (unit sphere)
+    x, y, z = geo_to_cartesian(longitude, latitude)
+    p = np.column_stack((x.flatten(), y.flatten(), z.flatten()))
 
-def geo_to_cart(lam, phi):
-    from numpy import cos, sin
-    R = 1.0
-    z = R * sin(phi)
-    x = R * cos(lam) * cos(phi)
-    y = R * sin(lam) * cos(phi)
-    return (x, y, z)
+    # Compute distance (km) to refinement center on the unit sphere
+    r = r_earth * unit_sphere_distance(p_center, p)
 
-def hfun(x):
-   from numpy import sin
-   return (95160.0 * x
-         + 23760.0 * sin(2 * x)
-         - 7425.0 * sin(4 * x)
-         + 2200.0 * sin(6 * x)
-         - 495.0 * sin(8 * x)
-         + 72.0 * sin(10 * x)
-         - 5.0 * sin(12 * x)) / 122880.0
+    # Return grid distances
+    return h(r)
 
-hfun_min = hfun(-0.5 * pi)
 
-def hfun_normalized(x):
-   x = x * pi - 0.5 * pi
-   return (hfun(x) - hfun_min) / 2.0 / abs(hfun_min)
+def h(r):
+   t_begin = 2600.0         # Radial distance (km) to begin transition from fine to coarse
+   t_end = 2600.0 + 1600.0  # Radial distance (km) to end transition from fine to coarse
+   h_min = hfun_min         # Grid distance (km) in refinement region
+   h_max = 60.0             # Grid distance (km) outside refinement region and transition
 
-def dx(r):
-   from numpy import logical_and
-   trans_center = 500.0 # 1000.0 # 500.0
-   width = 500.0 # 3700.0 # 400.0
-   hires = 3.0 # 10.0 # 3.0
-   lowres = 15.0 # 120.0 # 15.0
+   hires_mask = r < t_begin
+   transition_mask = np.logical_and(r >= t_begin, r < t_end)
+   lowres_mask = r >= t_end
 
-   hires_mask = r < trans_center
-   transition_mask = logical_and(r >= trans_center, r < (trans_center + width))
-   lowres_mask = r >= (trans_center + width)
-
-   ret = r
-   ret[hires_mask] = hires
-   ret[transition_mask] = (lowres - hires) * hfun_normalized((r[transition_mask] - trans_center) / width) + hires
-   ret[lowres_mask] = lowres
+   ret = np.zeros_like(r)
+   ret[hires_mask] = h_min
+   ret[transition_mask] = h_min + (r[transition_mask] - t_begin) * (h_max - h_min) / (t_end - t_begin)
+   ret[lowres_mask] = h_max
 
    return ret
+
+
+def geo_to_cartesian(lam, phi):
+    x = np.cos(lam) * np.cos(phi)
+    y = np.sin(lam) * np.cos(phi)
+    z = np.sin(phi)
+
+    return (x, y, z)
+
+
+def unit_sphere_distance(p, q_arr):
+    return np.arccos(np.einsum('j,ij->i', p, q_arr))
