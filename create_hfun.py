@@ -9,14 +9,15 @@ import hfun
 # region(s) and resolution transition zones are much larger in scale than
 # hfun_min.
 #
-deg_to_km = 2.0 * np.pi * 6371.229 / 360.0
+r_earth = 6371.229
+deg_to_km = 2.0 * np.pi * r_earth / 360.0
 nlat = int(180.0 * deg_to_km / hfun.hfun_min) + 1
 
 #
 # Generate 2-d lat-lon meshgrid (radians)
 #
 lats = np.linspace(-0.5 * np.pi, 0.5 * np.pi, num=nlat, endpoint=True)
-lons = np.linspace(-np.pi, np.pi, num=2*nlat, endpoint=True)
+lons = np.linspace(-np.pi, np.pi, num=2 * nlat, endpoint=True)
 latgrid, longrid = np.meshgrid(lats, lons)
 
 nlats = lats.size
