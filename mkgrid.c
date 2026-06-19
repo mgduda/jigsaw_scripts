@@ -833,6 +833,9 @@ void write_netcdf(MPI_Offset nCells, MPI_Offset nEdges, MPI_Offset nVertices, MP
 	MPI_Offset count1[1];
 	MPI_Offset count2[2];
 
+	size_t max_var_size;
+	int format;
+
 	double sphere_radius = 1.0;
 
 
@@ -840,7 +843,23 @@ void write_netcdf(MPI_Offset nCells, MPI_Offset nEdges, MPI_Offset nVertices, MP
 	start2[0] = (MPI_Offset)0;
 	start2[1] = (MPI_Offset)0;
 
-	ncerr = ncmpi_create(MPI_COMM_WORLD, "grid.nc", NC_WRITE|NC_64BIT_OFFSET, MPI_INFO_NULL, &ncid);
+	/*
+	 * The largest variable to be written is currently weightsOnEdge, and so
+	 * the product of its dimension sizes can be used to determine whether
+	 * the mesh should be written to a CDF-5 or a CDF-2 file.
+	 */
+	max_var_size = sizeof(double) * (size_t)nEdges * (size_t)maxEdges * 2ul;
+	fprintf(stderr, "Maximum variable size is %lu bytes\n", max_var_size);
+	if (max_var_size > INT_MAX) {
+		format = NC_64BIT_DATA;
+		fprintf(stderr, "Creating grid.nc in CDF-5 format\n");
+	} else {
+		format = NC_64BIT_OFFSET;
+		fprintf(stderr, "Creating grid.nc in CDF-2 format\n");
+	}
+
+
+	ncerr = ncmpi_create(MPI_COMM_WORLD, "grid.nc", NC_WRITE|format, MPI_INFO_NULL, &ncid);
 	handle_netcdf_error(ncerr, "Error creating grid.nc");
 
 	/*
