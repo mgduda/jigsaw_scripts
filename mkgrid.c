@@ -803,7 +803,8 @@ void write_netcdf(MPI_Offset nCells, MPI_Offset nEdges, MPI_Offset nVertices, MP
                   double * xCell, double * yCell, double * zCell,
                   double * xVertex, double * yVertex, double * zVertex,
                   int * nEdgesOnCell, int * cellsOnCell, int * verticesOnCell, int * cellsOnVertex,
-                  long density_len, char *density_code
+                  long density_len, char *density_code,
+                  double min_dc_m
                  )
 {
 	int ncerr;
@@ -824,6 +825,7 @@ void write_netcdf(MPI_Offset nCells, MPI_Offset nEdges, MPI_Offset nVertices, MP
 	int varIDedgesOnVertex, varIDcellsOnVertex, varIDkiteAreasOnVertex;
 	int varIDdvEdge, varIDdcEdge, varIDareaCell, varIDareaTriangle, varIDangleEdge;
 	int varIDmeshDensity;
+	int varIDnominalMinDc;
 	int varIDdensity_code;
 
 	int dimids1[1];
@@ -1007,6 +1009,9 @@ void write_netcdf(MPI_Offset nCells, MPI_Offset nEdges, MPI_Offset nVertices, MP
 	ncerr = ncmpi_def_var(ncid, "meshDensity", NC_DOUBLE, 1, dimids1, &varIDmeshDensity);
 	handle_netcdf_error(ncerr, "Error defining variable meshDensity");
 	add_variable_attributes(ncid, varIDmeshDensity, "meshDensity");
+	ncerr = ncmpi_def_var(ncid, "nominalMinDc", NC_DOUBLE, 0, NULL, &varIDnominalMinDc);
+	handle_netcdf_error(ncerr, "Error defining variable nominalMinDc");
+	add_variable_attributes(ncid, varIDnominalMinDc, "nominalMinDc");
 	if (density_len > 0 && density_code != NULL) {
 		dimids1[0] = dimIDlen_code;
 		ncerr = ncmpi_def_var(ncid, "densityFunctionCode", NC_CHAR, 1, dimids1, &varIDdensity_code);
@@ -1058,6 +1063,12 @@ void write_netcdf(MPI_Offset nCells, MPI_Offset nEdges, MPI_Offset nVertices, MP
 	count2[1] = vertexDegree;
 	ncerr = put_var_piecewise(ncid, varIDcellsOnVertex, 2, sizeof(int), start2, count2, (void *)cellsOnVertex);
 	handle_netcdf_error(ncerr, "Error writing variable cellsOnVertex");
+
+	ncerr = ncmpi_put_vara(ncid, varIDnominalMinDc, NULL, NULL,
+	                       &min_dc_m, (MPI_Offset)1, MPI_DATATYPE_NULL);
+	if (ncerr != NC_NOERR) {
+		fprintf(stderr, "Error writing nominalMinDc: %s\n", ncmpi_strerror(ncerr));
+	}
 
 	if (density_len > 0 && density_code != NULL) {
 		start1[0] = (MPI_Offset)0;
@@ -1278,8 +1289,10 @@ int main(int argc, char **argv)
 	char *density_code;
 	long density_len;
 	FILE *density_file; 
+	double min_dc_m = 0.0;
 
 	double twopi = (double)4.0 * asin((double)1.0);
+	const double r_earth = 6371229.0;
 
 
 	stat = MPI_Init(&argc, &argv);
@@ -1291,10 +1304,19 @@ int main(int argc, char **argv)
 	/*
 	 * No command-line arguments are expected.
 	 */
-	if (argc != 1) {
-		fprintf(stderr, "\nUsage: mkgrid\n\n");
+	if (argc != 2) {
+		fprintf(stderr, "\nUsage: mkgrid <nominalMinDc_meters>\n\n");
+		fprintf(stderr, "    where nominalMinDc_meters is the nominal minimum grid distance\n");
+		fprintf(stderr, "    assuming a sphere radius of %lf m.\n\n", r_earth);
 		return 0;
 	}
+
+	/*
+	 * Set nominal minimum grid distance assuming a sphere radius of r_earth
+	 */
+	min_dc_m = strtod(argv[1], NULL);
+	fprintf(stderr, "Nominal minimum grid distance (m): %lf\n", min_dc_m);
+	min_dc_m /= r_earth;
 
 	nCells = (MPI_Offset)cell_count("SaveVertices");
 	nVertices = (MPI_Offset)vertex_count("SaveTriangles");
@@ -1698,7 +1720,8 @@ int main(int argc, char **argv)
 	             nEdgesOnCell,
 	             cellsOnCell, verticesOnCell,
 	             cellsOnVertex,
-	             density_len, density_code
+	             density_len, density_code,
+	             min_dc_m
 	            );
 
 	free(density_code);
