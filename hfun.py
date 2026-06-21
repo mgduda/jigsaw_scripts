@@ -52,4 +52,4 @@ def geo_to_cartesian(lam, phi):
 
 
 def unit_sphere_distance(p, q_arr):
-    return np.arccos(np.einsum('j,ij->i', p, q_arr))
+    return np.arccos(q_arr @ p)
